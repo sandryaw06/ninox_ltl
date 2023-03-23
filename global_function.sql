@@ -1,3 +1,5 @@
+"New test for github"
+alert("test")
 "--CONVERT TO RED--";
 function convert_to_red(str : text) do
 	html("<div style=""background-color:#f5765d""> " + str + " </div>")
