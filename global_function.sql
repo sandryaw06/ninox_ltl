@@ -1,6 +1,6 @@
 "New test for github"
 alert("test")
-"New test2 for github"
+"New test3 for github"
 alert("test")
 "--CONVERT TO RED--";
 function convert_to_red(str : text) do
