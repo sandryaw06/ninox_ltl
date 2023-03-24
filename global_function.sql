@@ -72,7 +72,7 @@ function get_week_summary(truck : number,f : date,t : date) do
 	let current_rpm := number(gross_week) / number(miles_week);
 	let dif := number(miles_week) - number(miles_start);
 	let driver_pay := sum((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
-	let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < f + 4 and To > t - 4).Expenses_nofuel_nodriverpay_);
+	let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
 	"Gross Week: " + gross_week + " / RPM: " + round(current_rpm, 2) +
 	"
 " +
