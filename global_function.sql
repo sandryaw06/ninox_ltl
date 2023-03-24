@@ -1,7 +1,7 @@
 
 "--CONVERT TO RED--";
 function convert_to_red(str : text) do
-	html("<div style=""background-color:#f5765d""> " + "str" + " </div>")
+	html("<div style=""background-color:#f5765d""> hello" + str + " </div>")
 end;
 "--CURRENT MONDAY--";
 function current_monday() do
