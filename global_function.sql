@@ -1,7 +1,6 @@
-
 "--CONVERT TO RED--";
 function convert_to_red(str : text) do
-	html("<div style=""background-color:#f5765d""> hello" + str + " </div>")
+	html("<div style=""background-color:#f5765d""> " + str + " </div>")
 end;
 "--CURRENT MONDAY--";
 function current_monday() do
@@ -30,7 +29,9 @@ end;
 "--CURRENT TRUCK CURRENT LOCATION--";
 function truck_current_location(truck : text) do
 	let truck := first(select TrucksDB where truck_ = truck);
-	if truck.location_ like "Home" or truck.location_ like "Hillsborough County, FL, 33610" or truck.location_ like "Sligh" or truck.location_ like "Lightning" then
+	if truck.location_ like "Home" or truck.location_ like "Hillsborough County, FL, 33610" or
+			truck.location_ like "Sligh" or
+		truck.location_ like "Lightning" then
 		"In Yard"
 	else
 		if truck.location_ like "Hillsborough County, FL, 33619" then
@@ -71,7 +72,7 @@ function get_week_summary(truck : number,f : date,t : date) do
 	let current_rpm := number(gross_week) / number(miles_week);
 	let dif := number(miles_week) - number(miles_start);
 	let driver_pay := sum((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
-	let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < f + 4 and To > t - 4).'Total Expenses this view');
+	let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < f + 4 and To > t - 4).Expenses_nofuel_nodriverpay_);
 	"Gross Week: " + gross_week + " / RPM: " + round(current_rpm, 2) +
 	"
 " +
@@ -82,11 +83,12 @@ function get_week_summary(truck : number,f : date,t : date) do
 	"Driver Pay: " +
 	driver_pay +
 	" / Other: " +
-	format(number(round(number(truck_other_deduction) - number(fuels_week) - number(driver_pay), 2)), "$#,###.##") +
+	format(number(round(number(truck_other_deduction), 2)), "$#,###.##") +
 	"
 " +
 	"Net: " +
-	format(number(round(number(gross_week) - number(truck_other_deduction), 2)), "$#,###.##")
+	format(number(round(number(gross_week) - number(fuels_week) - number(driver_pay) -
+	number(truck_other_deduction), 2)), "$#,###.##")
 end;
 "--GENERATE GENERAL NOTES--";
 function generate_general_notes(truck : text) do
@@ -100,30 +102,44 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 	let ht := convert_to_red(text(d1));
 	let w := (select Loads where Dispatch = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and Truck = tr);
 	if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
-		concat("-> " + first(w.Delivery)) + "
-" + concat(last(w.Origin) + " ->") + "
-	" + get_drivers_hours(text(trk))
+		concat("-> " + first(w.Delivery)) +
+		"
+" +
+		concat(last(w.Origin) + " ->") +
+		"
+	" +
+		get_drivers_hours(text(trk))
 	else
 		if w.'PU Date' = d1 then
-			concat(w.Origin + " ->") + "
-		" + get_drivers_hours(text(trk))
+			concat(w.Origin + " ->") +
+			"
+		" +
+			get_drivers_hours(text(trk))
 		else
 			if w.'DEL Date' = d1 then
-				concat("-> " + w.Delivery) + "
-			" + get_drivers_hours(text(trk))
+				concat("-> " + w.Delivery) +
+				"
+			" +
+				get_drivers_hours(text(trk))
 			else
 				if w.'PU Date' <= d1 and w.'DEL Date' >= d1 then
-					concat("In Transit") + "
-				" + get_drivers_hours(text(trk))
+					concat("In Transit") +
+					"
+				" +
+					get_drivers_hours(text(trk))
 				else
 					if today() = d1 then
 						if truck_current_location(text(trk)) = "In Yard" then
 							"In Yard"
 						else
-							truck_current_location(text(trk)) + "
-" + "Empty" + "
+							truck_current_location(text(trk)) +
+							"
+" +
+							"Empty" +
+							"
 
-" + get_drivers_hours(text(trk))
+" +
+							get_drivers_hours(text(trk))
 						end
 					else
 						void
@@ -142,7 +158,9 @@ function add_load(from_ : date,d : number,trk : text) do
 	let r := 0;
 	"let w1 := Dispatch;";
 	if w > 0 then
-		let f := number(last(select Loads where number(Dispatch) = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and number(Truck) = number(tr)).'Id#');
+		let f := number(last(select Loads
+					where number(Dispatch) = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and
+					number(Truck) = number(tr)).'Id#');
 		popupRecord(record(Loads,number(f)))
 	else
 		let check := dialog("Confirm Action", "Add a New Load? Please confirm.", ["Yes, create a new Load", "Cancel"]);
