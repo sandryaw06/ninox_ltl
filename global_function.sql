@@ -71,10 +71,22 @@ function get_week_summary(truck : number,f : date,t : date) do
 	let current_rpm := number(gross_week) / number(miles_week);
 	let dif := number(miles_week) - number(miles_start);
 	let driver_pay := sum((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
-	"Gross Week: " + gross_week + " / RPM: " + round(current_rpm, 2) + "
-" + "Week Fuel: " + fuels_week + "
-" + "Driver Pay: " + driver_pay + "
-" + "Net: $" + text(round(number(gross_week) - number(fuels_week) - number(driver_pay), 2))
+	let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < f + 4 and To > t - 4).'Total Expenses this view');
+	"Gross Week: " + gross_week + " / RPM: " + round(current_rpm, 2) +
+	"
+" +
+	"Week Fuel: " +
+	fuels_week +
+	"
+" +
+	"Driver Pay: " +
+	driver_pay +
+	" / Other: " +
+	format(number(round(number(truck_other_deduction) - number(fuels_week) - number(driver_pay), 2)), "$#,###.##") +
+	"
+" +
+	"Net: " +
+	format(number(round(number(gross_week) - number(truck_other_deduction), 2)), "$#,###.##")
 end;
 "--GENERATE GENERAL NOTES--";
 function generate_general_notes(truck : text) do
