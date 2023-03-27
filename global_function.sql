@@ -100,10 +100,11 @@ function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 	let dif := number(miles_week) - number(miles_start);
 	let driver_pay := sum((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
 	let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
-	"Gross Week: " + gross + " / RPM: " + round(current_rpm, 2) + "
-" + "Week Fuel: " + fuels_week + "
-" + "Driver Pay: " + driver_pay + " / Other: " + format(number(round(number(truck_other_deduction), 2)), "$#,###.##") + "
-" + "Net: " + format(net, "$#,###.##")
+	let net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " + round(current_rpm, 2) + " </b> </div> <div> <b>Week Fuel: " + fuels_week + "</b></div> <div><b> Driver Pay: " + driver_pay + " / Other: " + format(number(round(number(truck_other_deduction), 2)), "$#,###.##") + "</b></div> <div style=""color:green""><b>" + format(net, "$#,###.##") + " </b> </div> ");
+	if net < 0 then
+		net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " + round(current_rpm, 2) + " </b> </div> <div> <b>Week Fuel: " + fuels_week + "</b></div> <div><b> Driver Pay: " + driver_pay + " / Other: " + format(number(round(number(truck_other_deduction), 2)), "$#,###.##") + "</b></div> <div style=""color:red""><b>" + format(net, "$#,###.##") + " </b> </div> ")
+	end;
+	net_str
 end;
 "--GENERATE GENERAL NOTES--";
 function generate_general_notes(truck : text) do
