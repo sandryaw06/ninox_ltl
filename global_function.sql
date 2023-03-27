@@ -78,6 +78,13 @@ function get_truck_loads_calendar(dispatch : number,f : date,t : date,r : number
 	let return_string := html("<div style=""color:black"">" + text(truck) + " </div>");
 	let net := get_week_summary_net(truck, f, t);
 	let gross := get_week_summary_gross(truck, f, t);
+	text(truck)
+end;
+function get_truck_loads_calendar_html(dispatch : number,f : date,t : date,r : number) do
+	let truck := item(sort((select TrucksDB where dispatch_ = dispatch).truck_), r);
+	let return_string := html("<div style=""color:black"">" + text(truck) + " </div>");
+	let net := get_week_summary_net(truck, f, t);
+	let gross := get_week_summary_gross(truck, f, t);
 	if number(net) <= 0 and number(gross) > 0 then
 		return_string := html("<div style=""color:red"">" + text(truck) + " </div>")
 	end;
