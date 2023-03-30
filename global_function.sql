@@ -123,7 +123,7 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 	let d := dispatch;
 	let tr := trk;
 	let ht := convert_to_red(text(d1));
-	let w := (select Loads where Dispatch = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and Truck = tr);
+	let w := (select Loads where dispatch_ = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and Truck = tr);
 	if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
 		concat("-> " + first(w.Delivery)) + "
 " + concat(last(w.Origin) + " ->") + "
@@ -163,18 +163,18 @@ function add_load(from_ : date,d : number,trk : text) do
 	let d1 := from_;
 	let disp := d;
 	let tr := number(trk);
-	let w := cnt(select Loads where Dispatch = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and Truck = tr);
+	let w := cnt(select Loads where dispatch_ = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and Truck = tr);
 	let r := 0;
 	"let w1 := Dispatch;";
 	if w > 0 then
-		let f := number(last(select Loads where number(Dispatch) = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and number(Truck) = number(tr)).'Id#');
+		let f := number(last(select Loads where number(dispatch_) = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and number(Truck) = number(tr)).'Id#');
 		popupRecord(record(Loads,number(f)))
 	else
 		let check := dialog("Confirm Action", "Add a New Load? Please confirm.", ["Yes, create a new Load", "Cancel"]);
 		if check = "Yes, create a new Load" then
 			let q := (create Loads);
 			r := number(q.Id);
-			q.(Dispatch := d);
+			q.(dispatch_ := d);
 			q.(Truck := tr);
 			q.('PU Date' := d1);
 			popupRecord(record(Loads,number(r)))
