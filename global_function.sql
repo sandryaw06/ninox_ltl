@@ -146,7 +146,8 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 	let d := dispatch;
 	let tr := trk;
 	let ht := convert_to_red(text(d1));
-	let w := (select Loads where dispatch_ = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and TrucksDB = tr);
+	let trn := last((select TrucksDB where truck_ = number(trk)).Id);
+	let w := (select Loads where dispatch_ = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and TrucksDB = trn);
 	if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
 		concat("-> " + first(w.Delivery)) +
 		"
@@ -207,7 +208,7 @@ function add_load(from_ : date,d : number,trk : text) do
 	if w > 0 then
 		let f := number(last(select Loads
 					where number(dispatch_) = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and
-					number(TrucksDB) = number(tr)).'Id#');
+					number(TrucksDB) = number(trn)).'Id#');
 		popupRecord(record(Loads,number(f)))
 	else
 		let check := dialog("Confirm Action", "Add a New Load? Please confirm.", ["Yes, create a new Load", "Cancel"]);
