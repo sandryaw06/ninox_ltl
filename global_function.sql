@@ -78,6 +78,7 @@ function get_week_summary_net(truck : number,f : date,t : date) do
 	let fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ <= t).subTotal_);
 	let driver_pay := sum((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
 	let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
+	let truck_percent := (select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).'%AppliedSaved';
 	number(round(number(gross_week) - number(fuels_week) - number(driver_pay) -
 	number(truck_other_deduction), 2))
 end;
@@ -108,15 +109,18 @@ end;
 function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 	let truck := item(sort((select TrucksDB where dispatch_ = dispatch).truck_), r);
 	if truck > 0 then
-		let fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ <= t).subTotal_);
+		let fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ < t).subTotal_);
 		let miles_week := get_week_loads_miles(truck, f, t);
 		let miles_start := (select 'Daily Fuel' where truck_ = truck and postDate_ = current_facturation_week_start()).odoMiles_;
-		let gross := get_week_summary_gross(truck, f, t);
+		let gross := round(get_week_summary_gross(truck, f, t), 2);
 		let net := get_week_summary_net(truck, f, t);
 		let current_rpm := number(gross) / number(miles_week);
 		let dif := number(miles_week) - number(miles_start);
 		let driver_pay := sum((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
 		let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
+		let truck_percent := (select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).'%AppliedSaved';
+		let net_2 := gross * number(truck_percent) / 100 - fuels_week - driver_pay -
+			truck_other_deduction;
 		let net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " +
 			round(current_rpm, 2) +
 			" </b> </div> <div> <b>Week Fuel: " +
@@ -126,7 +130,7 @@ function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 			" / Other: " +
 			format(number(round(number(truck_other_deduction), 2)), "$#,###.##") +
 			"</b></div> <div style=""color:green""><b>" +
-			format(net, "$#,###.##") +
+			format(number(round(number(net_2), 2)), "$#,###.##") +
 			" </b> </div> ");
 		if net < 0 then
 			net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " +
@@ -138,7 +142,7 @@ function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 				" / Other: " +
 				format(number(round(number(truck_other_deduction), 2)), "$#,###.##") +
 				"</b></div> <div style=""color:red""><b>" +
-				format(net, "$#,###.##") +
+				format(number(round(number(net_2), 2)), "$#,###.##") +
 				" </b> </div> ")
 		end;
 		net_str
