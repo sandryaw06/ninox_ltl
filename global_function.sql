@@ -107,28 +107,17 @@ end;
 "get_week_summary(number(q), date(from_), date(To_ + 1),0)";
 function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 	let truck := item(sort((select TrucksDB where dispatch_ = dispatch).truck_), r);
-	let fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ <= t).subTotal_);
-	let miles_week := get_week_loads_miles(truck, f, t);
-	let miles_start := (select 'Daily Fuel' where truck_ = truck and postDate_ = current_facturation_week_start()).odoMiles_;
-	let gross := get_week_summary_gross(truck, f, t);
-	let net := get_week_summary_net(truck, f, t);
-	let current_rpm := number(gross) / number(miles_week);
-	let dif := number(miles_week) - number(miles_start);
-	let driver_pay := sum((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
-	let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
-	let net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " +
-		round(current_rpm, 2) +
-		" </b> </div> <div> <b>Week Fuel: " +
-		fuels_week +
-		"</b></div> <div><b> Driver Pay: " +
-		driver_pay +
-		" / Other: " +
-		format(number(round(number(truck_other_deduction), 2)), "$#,###.##") +
-		"</b></div> <div style=""color:green""><b>" +
-		format(net, "$#,###.##") +
-		" </b> </div> ");
-	if net < 0 then
-		net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " +
+	if truck > 0 then
+		let fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ <= t).subTotal_);
+		let miles_week := get_week_loads_miles(truck, f, t);
+		let miles_start := (select 'Daily Fuel' where truck_ = truck and postDate_ = current_facturation_week_start()).odoMiles_;
+		let gross := get_week_summary_gross(truck, f, t);
+		let net := get_week_summary_net(truck, f, t);
+		let current_rpm := number(gross) / number(miles_week);
+		let dif := number(miles_week) - number(miles_start);
+		let driver_pay := sum((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
+		let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
+		let net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " +
 			round(current_rpm, 2) +
 			" </b> </div> <div> <b>Week Fuel: " +
 			fuels_week +
@@ -136,11 +125,26 @@ function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 			driver_pay +
 			" / Other: " +
 			format(number(round(number(truck_other_deduction), 2)), "$#,###.##") +
-			"</b></div> <div style=""color:red""><b>" +
+			"</b></div> <div style=""color:green""><b>" +
 			format(net, "$#,###.##") +
-			" </b> </div> ")
-	end;
-	net_str
+			" </b> </div> ");
+		if net < 0 then
+			net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " +
+				round(current_rpm, 2) +
+				" </b> </div> <div> <b>Week Fuel: " +
+				fuels_week +
+				"</b></div> <div><b> Driver Pay: " +
+				driver_pay +
+				" / Other: " +
+				format(number(round(number(truck_other_deduction), 2)), "$#,###.##") +
+				"</b></div> <div style=""color:red""><b>" +
+				format(net, "$#,###.##") +
+				" </b> </div> ")
+		end;
+		net_str
+	else
+		void
+	end
 end;
 "--GENERATE GENERAL NOTES--";
 function generate_general_notes(truck : text) do
@@ -148,58 +152,62 @@ function generate_general_notes(truck : text) do
 end;
 "--GET LOAD--";
 function get_load(day_to_add : number,dispatch : number,f : date,trk : number) do
-	let d1 := f + day_to_add;
-	let d := dispatch;
-	let tr := trk;
-	let ht := convert_to_red(text(d1));
-	let trn := last((select TrucksDB where truck_ = number(trk)).Id);
-	let w := (select Loads where dispatch_ = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and TrucksDB = trn);
-	if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
-		concat("-> " + first(w.Delivery)) +
-		"
-" +
-		concat(last(w.Origin) + " ->") +
-		"
-	" +
-		get_drivers_hours(text(trk))
-	else
-		if w.'PU Date' = d1 then
-			concat(w.Origin + " ->") +
+	if trk > 10 then
+		let d1 := f + day_to_add;
+		let d := dispatch;
+		let tr := trk;
+		let ht := convert_to_red(text(d1));
+		let trn := last((select TrucksDB where truck_ = number(trk)).Id);
+		let w := (select Loads where dispatch_ = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and TrucksDB = trn);
+		if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
+			concat("-> " + first(w.Delivery)) +
 			"
-		" +
+" +
+			concat(last(w.Origin) + " ->") +
+			"
+	" +
 			get_drivers_hours(text(trk))
 		else
-			if w.'DEL Date' = d1 then
-				concat("-> " + w.Delivery) +
+			if w.'PU Date' = d1 then
+				concat(w.Origin + " ->") +
 				"
-			" +
+		" +
 				get_drivers_hours(text(trk))
 			else
-				if w.'PU Date' <= d1 and w.'DEL Date' >= d1 then
-					concat("In Transit") +
+				if w.'DEL Date' = d1 then
+					concat("-> " + w.Delivery) +
 					"
-				" +
+			" +
 					get_drivers_hours(text(trk))
 				else
-					if today() = d1 then
-						if truck_current_location(text(trk)) = "In Yard" then
-							"In Yard"
-						else
-							truck_current_location(text(trk)) +
-							"
+					if w.'PU Date' <= d1 and w.'DEL Date' >= d1 then
+						concat("In Transit") +
+						"
+				" +
+						get_drivers_hours(text(trk))
+					else
+						if today() = d1 then
+							if truck_current_location(text(trk)) = "In Yard" then
+								"In Yard"
+							else
+								truck_current_location(text(trk)) +
+								"
 " +
-							"Empty" +
-							"
+								"Empty" +
+								"
 
 " +
-							get_drivers_hours(text(trk))
+								get_drivers_hours(text(trk))
+							end
+						else
+							void
 						end
-					else
-						void
 					end
 				end
 			end
 		end
+	else
+		void
 	end
 end;
 "--ADD LOAD--";
