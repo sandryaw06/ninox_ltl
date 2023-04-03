@@ -64,8 +64,14 @@ function get_drivers_hours(truck : text) do
 	join(drivers, "/")
 end;
 function get_week_summary_gross(truck : number,f : date,t : date) do
-	let gross_week := sum((select Loads where 'DEL Date' >= f and 'DEL Date' <= t and TrucksDB = truck).Gross);
+	let trn := last((select TrucksDB where truck_ = number(truck)).Id);
+	let gross_week := sum((select Loads where 'DEL Date' >= f and 'DEL Date' <= t and TrucksDB = trn).Gross);
 	number(gross_week)
+end;
+function get_week_loads_miles(truck : number,f : date,t : date) do
+	let trn := last((select TrucksDB where truck_ = number(truck)).Id);
+	let week_miles := sum((select Loads where 'DEL Date' >= f and 'DEL Date' <= t and TrucksDB = trn).Miles);
+	number(week_miles)
 end;
 function get_week_summary_net(truck : number,f : date,t : date) do
 	let gross_week := get_week_summary_gross(truck, f, t);
@@ -102,7 +108,7 @@ end;
 function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 	let truck := item(sort((select TrucksDB where dispatch_ = dispatch).truck_), r);
 	let fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ <= t).subTotal_);
-	let miles_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f).odoMiles_);
+	let miles_week := get_week_loads_miles(truck, f, t);
 	let miles_start := (select 'Daily Fuel' where truck_ = truck and postDate_ = current_facturation_week_start()).odoMiles_;
 	let gross := get_week_summary_gross(truck, f, t);
 	let net := get_week_summary_net(truck, f, t);
