@@ -45,6 +45,19 @@ function truck_current_location(truck : text) do
 		end
 	end
 end;
+"-- WEEK PAID AFTER UPDATE ON PAYMENT APPROVAL--";
+function update_week_paid_select_(weekpaid : boolean,wpaid : number,wtp : number,trk : number,disp : text,outd : date,ret : date,dayp : number,weekp : number,log : text) do
+	if weekpaid = 1 then wpaid := wtp else wpaid := null end;
+	let l := log;
+	log := concat(today() + "Truck: " + trk + ", Dispatch: " + disp + ", Out Date: " + outd +
+			", Return: " +
+			ret +
+			", Day Pay: " +
+			dayp +
+			"
+" +
+			l)
+end;
 "--GET FULL NAME DRIVERS HOURS--";
 function get_full_name_drivers_hours(truck : text) do
 	let drivers_names_hrs := [""];
@@ -116,7 +129,8 @@ function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 		let net := get_week_summary_net(truck, f, t);
 		let current_rpm := number(gross) / number(miles_week);
 		let dif := number(miles_week) - number(miles_start);
-		let driver_pay := sum((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
+		let driver_pay := 2 *
+			last((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
 		let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
 		let truck_percent := (select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).'%AppliedSaved';
 		let net_2 := gross * number(truck_percent) / 100 - fuels_week - driver_pay -
@@ -170,25 +184,41 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 			concat(last(w.Origin) + " ->") +
 			"
 	" +
-			get_drivers_hours(text(trk))
+			if today() = d1 then
+				get_drivers_hours(text(trk))
+			else
+				void
+			end
 		else
 			if w.'PU Date' = d1 then
 				concat(w.Origin + " ->") +
 				"
 		" +
-				get_drivers_hours(text(trk))
+				if today() = d1 then
+					get_drivers_hours(text(trk))
+				else
+					void
+				end
 			else
 				if w.'DEL Date' = d1 then
 					concat("-> " + w.Delivery) +
 					"
 			" +
-					get_drivers_hours(text(trk))
+					if today() = d1 then
+						get_drivers_hours(text(trk))
+					else
+						void
+					end
 				else
 					if w.'PU Date' <= d1 and w.'DEL Date' >= d1 then
 						concat("In Transit") +
 						"
 				" +
-						get_drivers_hours(text(trk))
+						if today() = d1 then
+							get_drivers_hours(text(trk))
+						else
+							void
+						end
 					else
 						if today() = d1 then
 							if truck_current_location(text(trk)) = "In Yard" then
@@ -221,13 +251,34 @@ function add_load(from_ : date,d : number,trk : text) do
 	let tr := number(trk);
 	let trn := last((select TrucksDB where truck_ = number(trk)).Id);
 	let w := cnt(select Loads where dispatch_ = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and TrucksDB = trn);
+	let last_del_day := cnt(select Loads where dispatch_ = d and 'DEL Date' = d1 and TrucksDB = trn);
+	let more_loads_future := cnt(select Loads where dispatch_ = d and 'PU Date' >= d1 and TrucksDB = trn);
 	let r := 0;
 	"let w1 := Dispatch;";
 	if w > 0 then
-		let f := number(last(select Loads
-					where number(dispatch_) = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and
-					number(TrucksDB) = number(trn)).'Id#');
-		popupRecord(record(Loads,number(f)))
+		if last_del_day = 1 and more_loads_future = 0 then
+			let check := dialog("Confirm Action", "Add a New Load or See last load Please confirm.", ["Open Load", "Create a new Load", "Cancel"]);
+			if check = "Open Load" then
+				let f := number(last(select Loads
+							where number(dispatch_) = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and
+							number(TrucksDB) = number(trn)).'Id#');
+				popupRecord(record(Loads,number(f)))
+			else
+				if check = "Create a new Load" then
+					let q := (create Loads);
+					r := number(q.Id);
+					q.(dispatch_ := d);
+					q.(TrucksDB := trn);
+					q.('PU Date' := d1);
+					popupRecord(record(Loads,number(r)))
+				end
+			end
+		else
+			let f := number(last(select Loads
+						where number(dispatch_) = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and
+						number(TrucksDB) = number(trn)).'Id#');
+			popupRecord(record(Loads,number(f)))
+		end
 	else
 		let check := dialog("Confirm Action", "Add a New Load? Please confirm.", ["Yes, create a new Load", "Cancel"]);
 		if check = "Yes, create a new Load" then
