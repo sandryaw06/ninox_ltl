@@ -29,9 +29,7 @@ end;
 "--CURRENT TRUCK CURRENT LOCATION--";
 function truck_current_location(truck : text) do
 	let truck := first(select TrucksDB where truck_ = truck);
-	if truck.location_ like "Home" or truck.location_ like "Hillsborough County, FL, 33610" or
-			truck.location_ like "Sligh" or
-		truck.location_ like "Lightning" then
+	if truck.location_ like "Home" or truck.location_ like "Hillsborough County, FL, 33610" or truck.location_ like "Sligh" or truck.location_ like "Lightning" then
 		"In Yard"
 	else
 		if truck.location_ like "Hillsborough County, FL, 33619" then
@@ -49,14 +47,8 @@ end;
 function update_week_paid_select_(weekpaid : boolean,wpaid : number,wtp : number,trk : number,disp : text,outd : date,ret : date,dayp : number,weekp : number,log : text) do
 	if weekpaid = 1 then wpaid := wtp else wpaid := null end;
 	let l := log;
-	log := concat(today() + "Truck: " + trk + ", Dispatch: " + disp + ", Out Date: " + outd +
-			", Return: " +
-			ret +
-			", Day Pay: " +
-			dayp +
-			"
-" +
-			l)
+	log := concat(today() + "Truck: " + trk + ", Dispatch: " + disp + ", Out Date: " + outd + ", Return: " + ret + ", Day Pay: " + dayp + "
+" + l)
 end;
 "--GET FULL NAME DRIVERS HOURS--";
 function get_full_name_drivers_hours(truck : text) do
@@ -92,8 +84,7 @@ function get_week_summary_net(truck : number,f : date,t : date) do
 	let driver_pay := sum((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
 	let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
 	let truck_percent := (select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).'%AppliedSaved';
-	number(round(number(gross_week) - number(fuels_week) - number(driver_pay) -
-	number(truck_other_deduction), 2))
+	number(round(number(gross_week) - number(fuels_week) - number(driver_pay) - number(truck_other_deduction), 2))
 end;
 "--TRUCK LOAD CALENDAR --";
 function get_truck_loads_calendar(dispatch : number,f : date,t : date,r : number) do
@@ -120,6 +111,7 @@ end;
 "let q := Dispatch;";
 "get_week_summary(number(q), date(from_), date(To_ + 1),0)";
 function get_week_summary(dispatch : number,f : date,t : date,r : number) do
+	let f := f + 3;
 	let truck := item(sort((select TrucksDB where dispatch_ = dispatch).truck_), r);
 	if truck > 0 then
 		let fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ < t).subTotal_);
@@ -129,35 +121,13 @@ function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 		let net := get_week_summary_net(truck, f, t);
 		let current_rpm := number(gross) / number(miles_week);
 		let dif := number(miles_week) - number(miles_start);
-		let driver_pay := 2 *
-			last((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
+		let driver_pay := 2 * last((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
 		let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
 		let truck_percent := (select FixedPayment where Truck = truck).'% Applied';
-		let net_2 := gross * number(truck_percent) / 100 - fuels_week - driver_pay -
-			truck_other_deduction;
-		let net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " +
-			round(current_rpm, 2) +
-			" </b> </div> <div> <b>Week Fuel: " +
-			fuels_week +
-			"</b></div> <div><b> Driver Pay: " +
-			driver_pay +
-			" / Other: " +
-			format(number(round(number(truck_other_deduction), 2)), "$#,###.##") +
-			"</b></div> <div style=""color:green""><b>" +
-			format(number(round(number(net_2), 2)), "$#,###.##") +
-			" </b> </div> ");
+		let net_2 := gross * number(truck_percent) / 100 - fuels_week - driver_pay - truck_other_deduction;
+		let net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " + round(current_rpm, 2) + " </b> </div> <div> <b>Week Fuel: " + fuels_week + "</b></div> <div><b> Driver Pay: " + driver_pay + " / Other: " + format(number(round(number(truck_other_deduction), 2)), "$#,###.##") + "</b></div> <div style=""color:green""><b>" + format(number(round(number(net_2), 2)), "$#,###.##") + " </b> </div> ");
 		if net < 0 then
-			net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " +
-				round(current_rpm, 2) +
-				" </b> </div> <div> <b>Week Fuel: " +
-				fuels_week +
-				"</b></div> <div><b> Driver Pay: " +
-				driver_pay +
-				" / Other: " +
-				format(number(round(number(truck_other_deduction), 2)), "$#,###.##") +
-				"</b></div> <div style=""color:red""><b>" +
-				format(number(round(number(net_2), 2)), "$#,###.##") +
-				" </b> </div> ")
+			net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " + round(current_rpm, 2) + " </b> </div> <div> <b>Week Fuel: " + fuels_week + "</b></div> <div><b> Driver Pay: " + driver_pay + " / Other: " + format(number(round(number(truck_other_deduction), 2)), "$#,###.##") + "</b></div> <div style=""color:red""><b>" + format(number(round(number(net_2), 2)), "$#,###.##") + " </b> </div> ")
 		end;
 		net_str
 	else
@@ -178,43 +148,33 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 		let trn := last((select TrucksDB where truck_ = number(trk)).Id);
 		let w := (select Loads where dispatch_ = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and TrucksDB = trn);
 		if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
-			concat("-> " + first(w.Delivery)) +
-			"
-" +
-			concat(last(w.Origin) + " ->") +
-			"
-	" +
-			if today() = d1 then
+			concat("-> " + first(w.Delivery)) + "
+" + concat(last(w.Origin) + " ->") + "
+	" + if today() = d1 then
 				get_drivers_hours(text(trk))
 			else
 				void
 			end
 		else
 			if w.'PU Date' = d1 then
-				concat(w.Origin + " ->") +
-				"
-		" +
-				if today() = d1 then
+				concat(w.Origin + " ->") + "
+		" + if today() = d1 then
 					get_drivers_hours(text(trk))
 				else
 					void
 				end
 			else
 				if w.'DEL Date' = d1 then
-					concat("-> " + w.Delivery) +
-					"
-			" +
-					if today() = d1 then
+					concat("-> " + w.Delivery) + "
+			" + if today() = d1 then
 						get_drivers_hours(text(trk))
 					else
 						void
 					end
 				else
 					if w.'PU Date' <= d1 and w.'DEL Date' >= d1 then
-						concat("In Transit") +
-						"
-				" +
-						if today() = d1 then
+						concat("In Transit") + "
+				" + if today() = d1 then
 							get_drivers_hours(text(trk))
 						else
 							void
@@ -224,14 +184,10 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 							if truck_current_location(text(trk)) = "In Yard" then
 								"In Yard"
 							else
-								truck_current_location(text(trk)) +
-								"
-" +
-								"Empty" +
-								"
+								truck_current_location(text(trk)) + "
+" + "Empty" + "
 
-" +
-								get_drivers_hours(text(trk))
+" + get_drivers_hours(text(trk))
 							end
 						else
 							void
@@ -259,9 +215,7 @@ function add_load(from_ : date,d : number,trk : text) do
 		if last_del_day = 1 and more_loads_future = 0 then
 			let check := dialog("Confirm Action", "Add a New Load or See last load Please confirm.", ["Open Load", "Create a new Load", "Cancel"]);
 			if check = "Open Load" then
-				let f := number(last(select Loads
-							where number(dispatch_) = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and
-							number(TrucksDB) = number(trn)).'Id#');
+				let f := number(last(select Loads where number(dispatch_) = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and number(TrucksDB) = number(trn)).'Id#');
 				popupRecord(record(Loads,number(f)))
 			else
 				if check = "Create a new Load" then
@@ -274,9 +228,7 @@ function add_load(from_ : date,d : number,trk : text) do
 				end
 			end
 		else
-			let f := number(last(select Loads
-						where number(dispatch_) = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and
-						number(TrucksDB) = number(trn)).'Id#');
+			let f := number(last(select Loads where number(dispatch_) = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and number(TrucksDB) = number(trn)).'Id#');
 			popupRecord(record(Loads,number(f)))
 		end
 	else
