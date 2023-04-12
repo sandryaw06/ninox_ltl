@@ -111,7 +111,7 @@ end;
 "let q := Dispatch;";
 "get_week_summary(number(q), date(from_), date(To_ + 1),0)";
 function get_week_summary(dispatch : number,f : date,t : date,r : number) do
-	let f := f + 3;
+	let f := f + 1;
 	let truck := item(sort((select TrucksDB where dispatch_ = dispatch).truck_), r);
 	if truck > 0 then
 		let fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ < t).subTotal_);
