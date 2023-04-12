@@ -132,7 +132,7 @@ function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 		let driver_pay := 2 *
 			last((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
 		let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
-		let truck_percent := (select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).'%AppliedSaved';
+		let truck_percent := (select FixedPayment where Truck = truck).'% Applied';
 		let net_2 := gross * number(truck_percent) / 100 - fuels_week - driver_pay -
 			truck_other_deduction;
 		let net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " +
