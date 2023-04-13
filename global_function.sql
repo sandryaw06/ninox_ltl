@@ -105,7 +105,7 @@ function get_truck_loads_calendar(dispatch : number,f : date,t : date,r : number
 end;
 function get_truck_loads_calendar_html(dispatch : number,f : date,t : date,r : number) do
 	let truck := item(sort((select TrucksDB where dispatch_ = dispatch).truck_), r);
-	let driver_pay_date := last(select DriverPay where TruckNumber_ = truck).'Return Day:';
+	let driver_pay_date := last(select DriverPay where TruckNumber_ = truck and DriverInTruck = "Driver in Truck" ).'Return Day:';
 	let result := "";
 	if date(driver_pay_date) >= date(f) and date(driver_pay_date) <= date(t) then
 		result := "<div style=""color:black"">" + text(driver_pay_date) + " </div>"
