@@ -184,73 +184,55 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 		let trn := last((select TrucksDB where truck_ = number(trk)).Id);
 		let status := text(last((select Load_Status where truck_ = trk and dispatch_number_ = d and from_ <= d1 and to_ >= d1).status_));
 		let w := (select Loads where dispatch_ = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and TrucksDB = trn);
-		if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
-			concat("-> " + first(w.Delivery)) +
+
+        let flags := ""
+        if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
+			flags := concat("-> " + first(w.Delivery)) +
 			"
-" +
-			concat(last(w.Origin) + " ->") +
-			"
-	" +
-			status +
-			if today() = d1 then
-				get_drivers_hours(text(trk))
-			else
-				void
-			end
+ 			" +
+			concat(last(w.Origin) + " ->") 
 		else
 			if w.'PU Date' = d1 then
-				concat(w.Origin + " ->") +
-				"
-		" +
-				status +
-				if today() = d1 then
-					get_drivers_hours(text(trk))
-				else
-					void
-				end
+			   flags := concat(w.Origin + " ->")  +
+					"
+				    " 
 			else
 				if w.'DEL Date' = d1 then
-					concat("-> " + w.Delivery) +
+					flags :=  concat("-> " + w.Delivery) +
 					"
-			" +
-					status +
-					if today() = d1 then
-						get_drivers_hours(text(trk))
-					else
-						void
-					end
+				    " + w.Gross
 				else
 					if w.'PU Date' <= d1 and w.'DEL Date' >= d1 then
-						concat("In Transit") +
+						flags := concat("In Transit") +
 						"
-				" +
-						status +
-						if today() = d1 then
-							get_drivers_hours(text(trk))
-						else
-							void
-						end
-					else
-						if today() = d1 then
-							if truck_current_location(text(trk)) = "In Yard" then
-								"In Yard"
-							else
-								truck_current_location(text(trk)) +
-								"
-" +
-								"Empty" +
-								"
-
-" +
-								get_drivers_hours(text(trk))
-							end
-						else
-							void
-						end
+						" 
 					end
 				end
+		    end
+		end;
+		let driver_hr := ""
+		if today() = d1 then
+			driver_hr := get_drivers_hours(text(trk))
+		end;
+
+		let location_truck := ""
+		if today() = d1 then
+			if truck_current_location(text(trk)) = "In Yard" then
+				location_truck := "In Yard"
+			else
+				location_truck := truck_current_location(text(trk)) +
+									"" +
+									"Empty"
 			end
-		end
+		end;
+		
+
+		flags + "
+		" + status +" 
+		" + driver_hr + "
+		"+ location_truck + ""
+
+	
 	else
 		void
 	end
