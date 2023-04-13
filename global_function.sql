@@ -195,32 +195,23 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 
         let flags := ""
         if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
-			flags := concat("-> " + first(w.Delivery)) +
-			"
- 			" +
-			concat(last(w.Origin) + " ->") 
+			flags := "<div>->"+ first(w.Delivery) +"</div></b><div>"+ last(w.Origin) + " -></div>"
 		else
 			if w.'PU Date' = d1 then
-			   flags := concat(w.Origin + " ->")  +
-					"
-				    " 
+			   	flags := "<div>"+w.Origin+" -></div>"
 			else
 				if w.'DEL Date' = d1 then
-					flags :=  concat("-> " + w.Delivery) +
-					"
-				    " + w.Gross
+					flags := "<div> ->"+w.Delivery+"</div><div><b>"+ w.Gross +"</b></div>"
 				else
 					if w.'PU Date' <= d1 and w.'DEL Date' >= d1 then
-						flags := concat("In Transit") +
-						"
-						" 
+					    flags := "<div> In Transit </div> "
 					end
 				end
 		    end
 		end;
 		let driver_hr := ""
 		if today() = d1 then
-			driver_hr := get_drivers_hours(text(trk))
+			driver_hr := "<div>"+ get_drivers_hours(text(trk)) +"</div> "
 		end;
 
 		let location_truck := ""
@@ -228,17 +219,11 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 			if truck_current_location(text(trk)) = "In Yard" then
 				location_truck := "In Yard"
 			else
-				location_truck := truck_current_location(text(trk)) +
-									"" +
-									"Empty"
+				location_truck := "<div>"+ truck_current_location(text(trk)) +"</div><div> Empty</div> "
 			end
 		end;
 		
-
-		flags + "
-		" + status +" 
-		" + driver_hr + "
-		"+ location_truck + ""
+		html("<div>"+flags+status+driver_hr+location_truck+"</div>")
 
 	
 	else
