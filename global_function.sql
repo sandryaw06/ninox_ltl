@@ -70,6 +70,14 @@ function get_full_name_drivers_hours(truck : text) do
 	join(drivers_names_hrs, "
 		")
 end;
+
+"-- NET ON HISTORIC SUMMARY--";
+function net_on_historic_summary(truck : number,f : date) do
+	let q := truck;
+	let d := f + 4;
+	let n := (select Facturacion where 'Truck#' = q and From < d and To > d and total_gross_facturado > 0).Net;
+	if n > 0 then number(n) else void end
+end;
 "--GET DRIVERS HOURS--";
 function get_drivers_hours(truck : text) do
 	let drivers_names_hrs := [""];
