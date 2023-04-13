@@ -74,10 +74,10 @@ end;
 "-- NET ON HISTORIC SUMMARY--";
 function net_on_historic_summary(truck : number,f : date) do
 	let q := truck;
-	let d := f + 2;
+	let d := date(f) + 2;
 	let n := sum((select Facturacion
 				where number('Truck#') = number(q) and date(From) < date(d) and date(To) > date(d) and
-				number(total_gross_facturado) > 0).Net);
+				number(total_gross_facturado) > 0).Net_);
 	if n > 0 then number(n) else void end
 end;
 "--GET DRIVERS HOURS--";
