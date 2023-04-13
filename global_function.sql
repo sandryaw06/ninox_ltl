@@ -105,14 +105,19 @@ function get_truck_loads_calendar(dispatch : number,f : date,t : date,r : number
 end;
 function get_truck_loads_calendar_html(dispatch : number,f : date,t : date,r : number) do
 	let truck := item(sort((select TrucksDB where dispatch_ = dispatch).truck_), r);
-	let return_string := html("<div style=""color:black"">" + text(truck) + " </div>");
+	let driver_pay_date := last(select DriverPay where TruckNumber_ = truck).'Return Day:';
+	let result := "";
+	if date(driver_pay_date) >= date(f) and date(driver_pay_date) <= date(t) then
+		result := "<div style=""color:black"">" + text(driver_pay_date) + " </div>"
+	end;
+	let return_string := html("<div style=""color:black"">" + text(truck) + "<br><p style='font-size:2vw;'>" + result + "<p> </div>");
 	let net := get_week_summary_net(truck, f, t);
 	let gross := get_week_summary_gross(truck, f, t);
 	if number(net) <= 0 and number(gross) > 0 then
-		return_string := html("<div style=""color:red"">" + text(truck) + " </div>")
+		return_string := html("<div style=""color:red"">" + text(truck) + "<br><p style='font-size:2vw;'>" + result + "</p> </div>")
 	end;
 	if net > 0 and gross > 0 then
-		return_string := html("<div style=""color:green"">" + text(truck) + " </div>")
+		return_string := html("<div style=""color:green"">" + text(truck) + "<br><p style='font-size:2vw;'>" + result + "</p> </div>")
 	end;
 	return_string
 end;
