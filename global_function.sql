@@ -197,7 +197,7 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 
         let flags := ""
         if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
-			flags := "<div>->"+ first(w.Delivery) +"</div></b><div>"+ last(w.Origin) + " -></div>"
+			flags := "<div>->"+ first(w.Delivery) +"</div><div><b>"+ first(w).Gross +"</b></div></b><div>"+ last(w.Origin) + " -></div>"
 		else
 			if w.'PU Date' = d1 then
 			   	flags := "<div>"+w.Origin+" -></div>"
