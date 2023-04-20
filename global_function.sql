@@ -160,7 +160,17 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 		let trn := last((select TrucksDB where truck_ = number(trk)).Id);
 		let w := (select Loads where dispatch_ = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and TrucksDB = trn);
 		let status := text(last((select Load_Status where truck_ = trk and dispatch_number_ = d and last(w.'Status From') <= d1 and last(w.'Status To') >= d1).status_));
-		
+		let status_html := "<div style=""background-color:green""> " + status + " </div>";
+		switch status do
+		case "Canceled":
+			(status_html := "<div style=""background-color:red""> " + status + " </div>")
+		case "Resetting":
+			(status_html := "<div style=""background-color:yellow""> " + status + " </div>")
+		case "Breakdown":
+			(status_html := "<div style=""background-color:orange""> " + status + " </div>")
+		case "Stoped":
+			(status_html := "<div style=""background-color:grey""> " + status + " </div>")
+		end;
 		let flags := "";
 		if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
 			flags := "<div>->" + first(w.Delivery) + "</div><div><b>" + first(w).Gross + "</b></div></b><div>" + last(w.Origin) + " -></div>"
@@ -189,7 +199,7 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 				location_truck := "<div>" + truck_current_location(text(trk)) + "</div><div> Empty</div> "
 			end
 		end;
-		html("<div>" + flags + status + driver_hr + location_truck + "</div>")
+		html("<div>" + flags + status_html + driver_hr + location_truck + "</div>")
 	else
 		void
 	end
