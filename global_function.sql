@@ -136,19 +136,32 @@ function get_truck_loads_calendar_html(dispatch : number,f : date,t : date,r : n
 	end;
 	return_string
 end;
+function get_facturation(truck:text, from_: date, to_: date) do
+	let f := date(from_) + 2;
+	let t := date(date(to_) + 2);
+	let fac := first(select Facturacion where Truck_ = truck and From = f and To = t);
+	fac
+end;
+function open_facturation(truck:text, from_: date, to_: date) do
+	let fac := get_facturation(truck, from_, to_);
+	popupRecord(fac)
+end;
 "--GET WEEK SUMMARY--";
 "let q := Dispatch;";
 "get_week_summary(number(q), date(from_), date(To_ + 1),0)";
 function get_week_summary(dispatch : number,f : date,t : date,r : number) do
-	f := f + 1;
 	let truck := item(sort((select TrucksDB where dispatch_ = dispatch).truck_), r);
 	if truck > 0 then
+		let fact := get_facturation(text(truck), f, t);
+	    f := f + 1;
 		let fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ < t).subTotal_);
 		let miles_week := get_week_loads_miles(truck, f, t);
 		let miles_start := (select 'Daily Fuel' where truck_ = truck and postDate_ = current_facturation_week_start()).odoMiles_;
 		let gross := round(get_week_summary_gross(truck, f, t), 2);
 		let net := get_week_summary_net(truck, f, t);
-		let current_rpm := number(gross) / number(miles_week);
+		
+		let current_rpm := fact.'RPM';
+		"number(gross) / number(miles_week)";
 		let dif := number(miles_week) - number(miles_start);
 		let driver_pay := 2 *
 			last((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
@@ -295,11 +308,3 @@ function add_load(from_ : date,d : number,trk : text) do
 		end
 	end
 end;
-
-function open_facturation(truck:text, from_: date, to_: date) do
-	let f := date(from_) + 2;
-	let t := date(date(to_) + 2);
-	let fac := first(select Facturacion where Truck_ = truck and From = f and To = t);
-	popupRecord(fac)
-
-end
