@@ -312,38 +312,40 @@ function add_load(from_ : date,d : number,trk : text) do
 			q.('PU Date' := d1);
 			q.(empty_load_ := 2);
 			popupRecord(record(Loads,number(r)))
-		end;
-		if check = "Resseting" then
-			let q := (create Loads);
-			r := number(q.Id);
-			q.(Status := "Resetting");
-			q.('Status From' := today());
-			q.('Status To' := today());
-			q.(dispatch_ := d);
-			q.(TrucksDB := trn);
-			q.('PU Date' := today());
-			q.('DEL Date' := today());
-			q.(empty_load_ := 1);
-			let a := (create Load_Status);
-			a.(Loads := q);
-			a.(from_ := today());
-			a.(status_ := "Resetting")
-		end;
-		if check = "In Yard" then
-			let q := (create Loads);
-			q.(Status := "In Yard");
-			r := number(q.Id);
-			q.(dispatch_ := d);
-			q.(TrucksDB := trn);
-			q.('Status From' := today());
-			q.('Status To' := today());
-			q.('PU Date' := today());
-			q.('DEL Date' := today());
-			q.(empty_load_ := 1);
-			let a := (create Load_Status);
-			a.(from_ := today());
-			a.(Loads := q);
-			a.(status_ := "In Yard")
+		else
+			if check = "Resseting" then
+				let q := (create Loads);
+				r := number(q.Id);
+				q.(Status := 2);
+				q.('Status From' := from_);
+				q.('Status To' := from_);
+				q.(dispatch_ := d);
+				q.(TrucksDB := trn);
+				q.('PU Date' := from_);
+				q.('DEL Date' := from_);
+				q.(empty_load_ := 1);
+				let a := (create Load_Status);
+				a.(Loads := q);
+				a.(from_ := from_);
+				a.(status_ := 2)
+			else
+				if check = "In Yard" then
+					let q := (create Loads);
+					q.(Status := 6);
+					r := number(q.Id);
+					q.(dispatch_ := d);
+					q.(TrucksDB := trn);
+					q.('Status From' := from_);
+					q.('Status To' := from_);
+					q.('PU Date' := from_);
+					q.('DEL Date' := from_);
+					q.(empty_load_ := 1);
+					let a := (create Load_Status);
+					a.(from_ := from_);
+					a.(Loads := q);
+					a.(status_ := 6)
+				end
+			end
 		end
 	end
 end
