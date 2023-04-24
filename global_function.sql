@@ -251,9 +251,9 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 		let location_truck := "";
 		if today() = d1 then
 			if truck_current_location(text(trk)) = "In Yard" then
-				location_truck := "In Yard"
+				location_truck := "<div>In Yard</div> <div> Empty</div> "
 			else
-				location_truck := "<div>" + truck_current_location(text(trk)) + "</div><div> Empty</div> "
+				location_truck := "<div>" + truck_current_location(text(trk)) + "</div>"
 			end
 		end;
 		html("<div>" + flags + status_html + driver_hr + location_truck + "</div>")
