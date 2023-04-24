@@ -136,13 +136,13 @@ function get_truck_loads_calendar_html(dispatch : number,f : date,t : date,r : n
 	end;
 	return_string
 end;
-function get_facturation(truck:text, from_: date, to_: date) do
+function get_facturation(truck : text,from_ : date,to_ : date) do
 	let f := date(from_) + 2;
 	let t := date(date(to_) + 2);
 	let fac := first(select Facturacion where Truck_ = truck and From = f and To = t);
 	fac
 end;
-function open_facturation(truck:text, from_: date, to_: date) do
+function open_facturation(truck : text,from_ : date,to_ : date) do
 	let fac := get_facturation(truck, from_, to_);
 	popupRecord(fac)
 end;
@@ -153,14 +153,13 @@ function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 	let truck := item(sort((select TrucksDB where dispatch_ = dispatch).truck_), r);
 	if truck > 0 then
 		let fact := get_facturation(text(truck), f, t);
-	    f := f + 1;
+		f := f + 1;
 		let fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ < t).subTotal_);
 		let miles_week := get_week_loads_miles(truck, f, t);
 		let miles_start := (select 'Daily Fuel' where truck_ = truck and postDate_ = current_facturation_week_start()).odoMiles_;
 		let gross := round(get_week_summary_gross(truck, f, t), 2);
 		let net := get_week_summary_net(truck, f, t);
-		
-		let current_rpm := fact.'RPM';
+		let current_rpm := fact.RPM;
 		"number(gross) / number(miles_week)";
 		let dif := number(miles_week) - number(miles_start);
 		let driver_pay := 2 *
@@ -204,6 +203,7 @@ function generate_general_notes(truck : text) do
 end;
 "--GET LOAD--";
 function get_load(day_to_add : number,dispatch : number,f : date,trk : number) do
+	let result := html("");
 	if trk > 10 then
 		let d1 := f + day_to_add;
 		let d := dispatch;
@@ -226,40 +226,46 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 			(status_html := "<div style=""background-color:grey""> " + status + " </div>")
 		end;
 		let flags := "";
-		if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
-			flags := "<div>->" + first(w.Delivery) + "</div><div><b>" + first(w).Gross +
-				"</b></div></b><div>" +
-				last(w.Origin) +
-				" -></div>"
-		else
-			if w.'PU Date' = d1 then
-				flags := "<div>" + w.Origin + " -></div>"
+		if number(w.empty_load_) = 2 then
+			if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
+				flags := "<div>->" + first(w.Delivery) + "</div><div><b>" + first(w).Gross +
+					"</b></div></b><div>" +
+					last(w.Origin) +
+					" -></div>"
 			else
-				if w.'DEL Date' = d1 then
-					flags := "<div> ->" + w.Delivery + "</div><div><b>" + w.Gross + "</b></div>"
+				if w.'PU Date' = d1 then
+					flags := "<div>" + w.Origin + " -></div>"
 				else
-					if w.'PU Date' <= d1 and w.'DEL Date' >= d1 then
-						flags := "<div> In Transit </div> "
+					if w.'DEL Date' = d1 then
+						flags := "<div> ->" + w.Delivery + "</div><div><b>" + w.Gross + "</b></div>"
+					else
+						if w.'PU Date' <= d1 and w.'DEL Date' >= d1 then
+							flags := "<div> In Transit </div> "
+						end
 					end
 				end
-			end
+			end;
+			let driver_hr := "";
+			if today() = d1 then
+				driver_hr := "<div>" + get_drivers_hours(text(trk)) + "</div> "
+			end;
+			let location_truck := "";
+			if today() = d1 then
+				if truck_current_location(text(trk)) = "In Yard" then
+					location_truck := "<div>In Yard</div> <div> Empty</div> "
+				else
+					location_truck := "<div>" + truck_current_location(text(trk)) + "</div>"
+				end
+			end;
+			result := html("<div>" + flags + status_html + driver_hr + location_truck + "</div>")
 		end;
-		let driver_hr := "";
-		if today() = d1 then
-			driver_hr := "<div>" + get_drivers_hours(text(trk)) + "</div> "
-		end;
-		let location_truck := "";
-		if today() = d1 then
-			if truck_current_location(text(trk)) = "In Yard" then
-				location_truck := "<div>In Yard</div> <div> Empty</div> "
-			else
-				location_truck := "<div>" + truck_current_location(text(trk)) + "</div>"
-			end
-		end;
-		html("<div>" + flags + status_html + driver_hr + location_truck + "</div>")
+		if number(w.empty_load_) = 1 then
+			result := html("<div>" + status_html + "</div>")
+		end
 	else
 		void
-	end
+	end;
+	result
 end;
 "--ADD LOAD--";
 function add_load(from_ : date,d : number,trk : text) do
@@ -297,14 +303,47 @@ function add_load(from_ : date,d : number,trk : text) do
 			popupRecord(record(Loads,number(f)))
 		end
 	else
-		let check := dialog("Confirm Action", "Add a New Load? Please confirm.", ["Yes, create a new Load", "Cancel"]);
+		let check := dialog("Confirm Action", "Add a New Load? Please confirm.", ["Yes, create a new Load", "Resseting", "In Yard", "Cancel"]);
 		if check = "Yes, create a new Load" then
 			let q := (create Loads);
 			r := number(q.Id);
 			q.(dispatch_ := d);
 			q.(TrucksDB := trn);
 			q.('PU Date' := d1);
+			q.(empty_load_ := 2);
 			popupRecord(record(Loads,number(r)))
+		end;
+		if check = "Resseting" then
+			let q := (create Loads);
+			r := number(q.Id);
+			q.(Status := "Resetting");
+			q.('Status From' := today());
+			q.('Status To' := today());
+			q.(dispatch_ := d);
+			q.(TrucksDB := trn);
+			q.('PU Date' := today());
+			q.('DEL Date' := today());
+			q.(empty_load_ := 1);
+			let a := (create Load_Status);
+			a.(Loads := q);
+			a.(from_ := today());
+			a.(status_ := "Resetting")
+		end;
+		if check = "In Yard" then
+			let q := (create Loads);
+			q.(Status := "In Yard");
+			r := number(q.Id);
+			q.(dispatch_ := d);
+			q.(TrucksDB := trn);
+			q.('Status From' := today());
+			q.('Status To' := today());
+			q.('PU Date' := today());
+			q.('DEL Date' := today());
+			q.(empty_load_ := 1);
+			let a := (create Load_Status);
+			a.(from_ := today());
+			a.(Loads := q);
+			a.(status_ := "In Yard")
 		end
 	end
-end;
+end
