@@ -204,16 +204,16 @@ end;
 "--GET LOAD--";
 function get_load(day_to_add : number,dispatch : number,f : date,trk : number) do
 	let result := html("");
+	let d1 := f + day_to_add;
+	let d := dispatch;
+	let tr := trk;
+	let ht := convert_to_red(text(d1));
+	let trn := last((select TrucksDB where truck_ = number(trk)).Id);
+	let w := (select Loads where dispatch_ = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and TrucksDB = trn);
+	let status := text(last((select Load_Status
+				where truck_ = trk and dispatch_number_ = d and last(w.'Status From') <= d1 and
+				last(w.'Status To') >= d1).status_));
 	if trk > 10 then
-		let d1 := f + day_to_add;
-		let d := dispatch;
-		let tr := trk;
-		let ht := convert_to_red(text(d1));
-		let trn := last((select TrucksDB where truck_ = number(trk)).Id);
-		let w := (select Loads where dispatch_ = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and TrucksDB = trn);
-		let status := text(last((select Load_Status
-					where truck_ = trk and dispatch_number_ = d and last(w.'Status From') <= d1 and
-					last(w.'Status To') >= d1).status_));
 		let status_html := "<div style=""background-color:green""> " + status + " </div>";
 		switch status do
 		case "Canceled":
@@ -226,21 +226,27 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 			(status_html := "<div style=""background-color:grey""> " + status + " </div>")
 		end;
 		let flags := "";
-		if number(w.empty_load_) = 2 then
+		if number(w.empty_load_) != 1 then
 			if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
 				flags := "<div>->" + first(w.Delivery) + "</div><div><b>" + first(w).Gross +
-					"</b></div></b><div>" +
+					"</b></div><div>" +
 					last(w.Origin) +
 					" -></div>"
 			else
-				if w.'PU Date' = d1 then
-					flags := "<div>" + w.Origin + " -></div>"
+				if first(w.'PU Date') = d1 and last(w.'DEL Date') = d1 then
+					flags := "<div>->" + last(w.Delivery) + "</div><div><b>" + last(w).Gross + "</b></div><div>" +
+						first(w.Origin) +
+						" -></div>"
 				else
-					if w.'DEL Date' = d1 then
-						flags := "<div> ->" + w.Delivery + "</div><div><b>" + w.Gross + "</b></div>"
+					if w.'PU Date' = d1 then
+						flags := "<div>" + w.Origin + " -></div>"
 					else
-						if w.'PU Date' <= d1 and w.'DEL Date' >= d1 then
-							flags := "<div> In Transit </div> "
+						if w.'DEL Date' = d1 then
+							flags := "<div> ->" + w.Delivery + "</div><div><b>" + w.Gross + "</b></div>"
+						else
+							if w.'PU Date' <= d1 and w.'DEL Date' >= d1 then
+								flags := "<div> In Transit </div> "
+							end
 						end
 					end
 				end
@@ -303,7 +309,7 @@ function add_load(from_ : date,d : number,trk : text) do
 			popupRecord(record(Loads,number(f)))
 		end
 	else
-		let check := dialog("Confirm Action", "Add a New Load? Please confirm.", ["Yes, create a new Load", "Resseting", "In Yard", "Cancel"]);
+		let check := dialog("Confirm Action", "Add a New Load? Please confirm.", ["Yes, create a new Load", "Resetting", "In Yard", "Cancel"]);
 		if check = "Yes, create a new Load" then
 			let q := (create Loads);
 			r := number(q.Id);
@@ -313,8 +319,9 @@ function add_load(from_ : date,d : number,trk : text) do
 			q.(empty_load_ := 2);
 			popupRecord(record(Loads,number(r)))
 		else
-			if check = "Resseting" then
+			if check = "Resetting" then
 				let q := (create Loads);
+				q.(empty_load_ := 1);
 				r := number(q.Id);
 				q.(Status := 2);
 				q.('Status From' := from_);
@@ -323,14 +330,14 @@ function add_load(from_ : date,d : number,trk : text) do
 				q.(TrucksDB := trn);
 				q.('PU Date' := from_);
 				q.('DEL Date' := from_);
-				q.(empty_load_ := 1);
 				let a := (create Load_Status);
 				a.(Loads := q);
-				a.(from_ := from_);
+				a.(from_date := date(from_));
 				a.(status_ := 2)
 			else
 				if check = "In Yard" then
 					let q := (create Loads);
+					q.(empty_load_ := 1);
 					q.(Status := 6);
 					r := number(q.Id);
 					q.(dispatch_ := d);
@@ -339,9 +346,8 @@ function add_load(from_ : date,d : number,trk : text) do
 					q.('Status To' := from_);
 					q.('PU Date' := from_);
 					q.('DEL Date' := from_);
-					q.(empty_load_ := 1);
 					let a := (create Load_Status);
-					a.(from_ := from_);
+					a.(from_date := from_);
 					a.(Loads := q);
 					a.(status_ := 6)
 				end
