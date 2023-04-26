@@ -356,7 +356,6 @@ function add_load(from_ : date,d : number,trk : text) do
 	end
 end;
 function get_trucks_daily_capacity(dispatch: text, day: date) do
-
 	let t := 0;
 	let tex := "";
 	let loads := (select Loads where 'Dispatch:' = dispatch and 'DEL Date' = day and empty_load_ != 1);
@@ -365,8 +364,9 @@ function get_trucks_daily_capacity(dispatch: text, day: date) do
 	for i from 0 to c do
 		t := item(m, i);
 		if cnt(select Loads where 'Truck#' = t and 'DEL Date' > day and empty_load_ != 1) = 0 then
-			tex := concat(t + "---" + tex)
+			let load := (select Loads where 'Truck#' = t and 'DEL Date' = day and empty_load_ != 1);
+			tex := "<div>" + t + " --> " + load.Delivery + "</div><div>" + tex + "</div>"
 		end
 	end;
-	tex
+	html(tex)
 end
