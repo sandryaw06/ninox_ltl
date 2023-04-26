@@ -354,4 +354,19 @@ function add_load(from_ : date,d : number,trk : text) do
 			end
 		end
 	end
+end;
+function get_trucks_daily_capacity(dispatch: text, day: date) do
+
+	let t := 0;
+	let tex := "";
+	let loads := (select Loads where 'Dispatch:' = dispatch and 'DEL Date' = day and empty_load_ != 1);
+	let c := cnt(loads);
+	let m := sort(loads.'Truck#');
+	for i from 0 to c do
+		t := item(m, i);
+		if cnt(select Loads where 'Truck#' = t and 'DEL Date' > day and empty_load_ != 1) = 0 then
+			tex := concat(t + "---" + tex)
+		end
+	end;
+	tex
 end
