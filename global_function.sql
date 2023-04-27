@@ -211,27 +211,27 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 	let trn := last((select TrucksDB where truck_ = number(trk)).Id);
 	let w := (select Loads where dispatch_ = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and TrucksDB = trn);
 	let status := text(last((select Load_Status
-				where truck_ = trk and dispatch_number_ = d and last(w.'Status From') <= d1 and
-				last(w.'Status To') >= d1).status_));
+				where truck_ = trk and dispatch_number_ = d and from_date <= d1 and
+				to_ >= d1).status_));
 	if trk > 10 then
 		let status_html := "<div style=""background-color:green""> " + status + " </div>";
 		switch status do
-		case "Canceled":
-			(status_html := "<div style=""background-color:red""> " + status + " </div>")
-		case "Resetting":
-			(status_html := "<div style=""background-color:yellow""> " + status + " </div>")
-		case "Breakdown":
-			(status_html := "<div style=""background-color:orange""> " + status + " </div>")
-		case "Stoped":
-			(status_html := "<div style=""background-color:grey""> " + status + " </div>")
-		case "In Yard":
-			(status_html := "<div style=""background-color:grey""> " + status + " </div>")	
-		end;
+			case "Canceled":
+				(status_html := "<div style=""background-color:red""> " + status + " </div>")
+			case "Resetting":
+				(status_html := "<div style=""background-color:yellow""> " + status + " </div>")
+			case "Breakdown":
+				(status_html := "<div style=""background-color:orange""> " + status + " </div>")
+			case "Stoped":
+				(status_html := "<div style=""background-color:grey""> " + status + " </div>")
+			case "In Yard":
+				(status_html := "<div style=""background-color:grey""> " + status + " </div>")	
+			end;
 		let flags := "";
 		if number(w.empty_load_) != 1 then
 			if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
 				flags := "<div>->" + first(w.Delivery) + "</div><div><b>" + first(w).Gross +
-					"</b></div><div>" +
+					"</b></div><div>"+status_html+"</div><div>" +
 					last(w.Origin) +
 					" -></div>"
 			else
@@ -253,6 +253,7 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 					end
 				end
 			end;
+			
 			let driver_hr := "";
 			if today() = d1 then
 				driver_hr := "<div>" + get_drivers_hours(text(trk)) + "</div> "
