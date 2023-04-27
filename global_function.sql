@@ -100,8 +100,12 @@ function get_week_summary_net(truck : number,f : date,t : date) do
 	let fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ <= t).subTotal_);
 	let driver_pay := sum((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
 	let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
-	let truck_percent := (select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).'%AppliedSaved';
-	number(round(number(gross_week) - number(fuels_week) - number(driver_pay) -
+	"let truck_percent := (select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).'%AppliedSaved'";
+	let truck_percent := (select FixedPayment where Truck = truck).'% Applied';
+	"number(round(number(gross_week) - number(fuels_week) - number(driver_pay) -
+	number(truck_other_deduction), 2))";
+	number(round(number(gross_week) * number(truck_percent) / 100 - number(fuels_week) -
+	number(driver_pay) -
 	number(truck_other_deduction), 2))
 end;
 "--TRUCK LOAD CALENDAR --";
@@ -166,8 +170,11 @@ function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 			last((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
 		let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
 		let truck_percent := (select FixedPayment where Truck = truck).'% Applied';
-		let net_2 := gross * number(truck_percent) / 100 - fuels_week - driver_pay -
-			truck_other_deduction;
+		let net_2 := 0;
+		if gross > 0 then
+			net_2 := gross * number(truck_percent) / 100 - fuels_week - driver_pay -
+				truck_other_deduction
+		end;
 		let net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " +
 			round(current_rpm, 2) +
 			" </b> </div> <div> <b>Week Fuel: " +
@@ -210,28 +217,28 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 	let ht := convert_to_red(text(d1));
 	let trn := last((select TrucksDB where truck_ = number(trk)).Id);
 	let w := (select Loads where dispatch_ = d and 'PU Date' <= d1 and 'DEL Date' >= d1 and TrucksDB = trn);
-	let status := text(last((select Load_Status
-				where truck_ = trk and dispatch_number_ = d and from_date <= d1 and
-				to_ >= d1).status_));
+	let status := text(last((select Load_Status where truck_ = trk and dispatch_number_ = d and from_date <= d1 and to_ >= d1).status_));
 	if trk > 10 then
 		let status_html := "<div style=""background-color:green""> " + status + " </div>";
 		switch status do
-			case "Canceled":
-				(status_html := "<div style=""background-color:red""> " + status + " </div>")
-			case "Resetting":
-				(status_html := "<div style=""background-color:yellow""> " + status + " </div>")
-			case "Breakdown":
-				(status_html := "<div style=""background-color:orange""> " + status + " </div>")
-			case "Stoped":
-				(status_html := "<div style=""background-color:grey""> " + status + " </div>")
-			case "In Yard":
-				(status_html := "<div style=""background-color:grey""> " + status + " </div>")	
-			end;
+		case "Canceled":
+			(status_html := "<div style=""background-color:red""> " + status + " </div>")
+		case "Resetting":
+			(status_html := "<div style=""background-color:yellow""> " + status + " </div>")
+		case "Breakdown":
+			(status_html := "<div style=""background-color:orange""> " + status + " </div>")
+		case "Stoped":
+			(status_html := "<div style=""background-color:grey""> " + status + " </div>")
+		case "In Yard":
+			(status_html := "<div style=""background-color:grey""> " + status + " </div>")
+		end;
 		let flags := "";
 		if number(w.empty_load_) != 1 then
 			if last(w.'PU Date') = d1 and first(w.'DEL Date') = d1 then
 				flags := "<div>->" + first(w.Delivery) + "</div><div><b>" + first(w).Gross +
-					"</b></div><div>"+status_html+"</div><div>" +
+					"</b></div><div>" +
+					status_html +
+					"</div><div>" +
 					last(w.Origin) +
 					" -></div>"
 			else
@@ -253,13 +260,12 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 					end
 				end
 			end;
-			
 			let driver_hr := "";
-			if today() = d1 then
+			if today() = d1 and cnt(w) = 0 then
 				driver_hr := "<div>" + get_drivers_hours(text(trk)) + "</div> "
 			end;
 			let location_truck := "";
-			if today() = d1 then
+			if today() = d1 and cnt(w) = 0 then
 				if truck_current_location(text(trk)) = "In Yard" then
 					location_truck := "<div>In Yard</div> <div> Empty</div> "
 				else
@@ -358,7 +364,7 @@ function add_load(from_ : date,d : number,trk : text) do
 		end
 	end
 end;
-function get_trucks_daily_capacity(dispatch: text, day: date) do
+function get_trucks_daily_capacity(dispatch : text,day : date) do
 	let t := 0;
 	let tex := "";
 	let loads := (select Loads where 'Dispatch:' = dispatch and 'DEL Date' = day and empty_load_ != 1);
