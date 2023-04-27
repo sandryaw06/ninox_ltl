@@ -179,7 +179,7 @@ function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 			"</b></div> <div style=""color:green""><b>" +
 			format(number(round(number(net_2), 2)), "$#,###.##") +
 			" </b> </div> ");
-		if net < 0 then
+		if net_2 < 0 then
 			net_str := html("<div> <b> Gross Week:" + format(gross, "$#,###.##") + " / RPM: " +
 				round(current_rpm, 2) +
 				" </b> </div> <div> <b>Week Fuel: " +
