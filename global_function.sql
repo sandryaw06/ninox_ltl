@@ -224,6 +224,8 @@ function get_load(day_to_add : number,dispatch : number,f : date,trk : number) d
 			(status_html := "<div style=""background-color:orange""> " + status + " </div>")
 		case "Stoped":
 			(status_html := "<div style=""background-color:grey""> " + status + " </div>")
+		case "In Yard":
+			(status_html := "<div style=""background-color:grey""> " + status + " </div>")	
 		end;
 		let flags := "";
 		if number(w.empty_load_) != 1 then
