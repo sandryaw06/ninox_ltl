@@ -96,14 +96,14 @@ function get_week_loads_miles(truck : number,f : date,t : date) do
 	number(week_miles)
 end;
 function get_week_summary_net(truck : number,f : date,t : date) do
-	let gross_week := get_week_summary_gross(truck, f, t);
-	let fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ <= t).subTotal_);
-	let driver_pay := sum((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
+	f := f + 1;
+	"let gross_week := round(get_week_summary_gross(truck, f, t), 2)";
+	let gross_week := round(get_week_summary_gross(truck, f, t), 2);
+	let fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ < t).subTotal_);
+	let driver_pay := 2 *
+		last((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
 	let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
-	"let truck_percent := (select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).'%AppliedSaved'";
 	let truck_percent := (select FixedPayment where Truck = truck).'% Applied';
-	"number(round(number(gross_week) - number(fuels_week) - number(driver_pay) -
-	number(truck_other_deduction), 2))";
 	number(round(number(gross_week) * number(truck_percent) / 100 - number(fuels_week) -
 	number(driver_pay) -
 	number(truck_other_deduction), 2))
@@ -117,6 +117,7 @@ function get_truck_loads_calendar(dispatch : number,f : date,t : date,r : number
 	text(truck)
 end;
 function get_truck_loads_calendar_html(dispatch : number,f : date,t : date,r : number) do
+	f := f + 1;
 	let truck := item(sort((select TrucksDB where dispatch_ = dispatch).truck_), r);
 	let driver_pay_date := last(select DriverPay where TruckNumber_ = truck and DriverInTruck = "Driver in Truck").'Return Day:';
 	let result := "";
@@ -135,6 +136,11 @@ function get_truck_loads_calendar_html(dispatch : number,f : date,t : date,r : n
 	end;
 	if net > 0 and gross > 0 then
 		return_string := html("<div style=""color:green"">" + text(truck) + "<br><p style='font-size:2vw;'>" +
+			result +
+			"</p> </div>")
+	end;
+	if gross = 0 then
+		return_string := html("<div style=""color:black"">" + text(truck) + "<br><p style='font-size:2vw;'>" +
 			result +
 			"</p> </div>")
 	end;
@@ -162,7 +168,7 @@ function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 		let miles_week := get_week_loads_miles(truck, f, t);
 		let miles_start := (select 'Daily Fuel' where truck_ = truck and postDate_ = current_facturation_week_start()).odoMiles_;
 		let gross := round(get_week_summary_gross(truck, f, t), 2);
-		let net := get_week_summary_net(truck, f, t);
+		"let net := get_week_summary_net(truck, f, t)";
 		let current_rpm := fact.RPM;
 		"number(gross) / number(miles_week)";
 		let dif := number(miles_week) - number(miles_start);
