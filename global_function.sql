@@ -380,12 +380,19 @@ function get_trucks_daily_capacity(dispatch : text,day : date) do
 		t := item(m, i);
 		if cnt(select Loads where 'Truck#' = t and 'DEL Date' > day and empty_load_ != 1) = 0 then
 			let load := (select Loads where 'Truck#' = t and 'DEL Date' = day and empty_load_ != 1);
-			if load.'Return Date' = day then
-				tex := "<div style=""background-color:red""> <b>" + t + "</b> --> " + upper(first(load).Delivery) + "</div><div>" + tex + "</div>"
+			if date(load.'Return Date') = day then
+				tex := "<div style=""background-color:red""> <b>" + t + "</b> --> " +
+					upper(first(load).Delivery) +
+					"</div><div>" +
+					tex +
+					"</div>"
 			else
-			    tex := "<div  style=""background-color:green""><b>" + t + "</b> --> " + upper(first(load).Delivery) + "</div><div>" + tex + "</div>"
+				tex := "<div  style=""background-color:green""><b>" + t + "</b> --> " +
+					upper(first(load).Delivery) +
+					"</div><div>" +
+					tex +
+					"</div>"
 			end
-			
 		end
 	end;
 	html(tex)
