@@ -164,7 +164,13 @@ function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 	if truck > 0 then
 		let fact := get_facturation(text(truck), f, t);
 		f := f + 1;
-		let fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ < t).subTotal_);
+		let fuels_week := 0;
+		let fue := number((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).'Fuel Expenses');
+		if fue > 0 then
+			fuels_week := round(fue, 2)
+		else
+			fuels_week := sum((select 'Daily Fuel' where truck_ = truck and postDate_ >= f and postDate_ < t).subTotal_)
+		end;
 		let miles_week := get_week_loads_miles(truck, f, t);
 		let miles_start := (select 'Daily Fuel' where truck_ = truck and postDate_ = current_facturation_week_start()).odoMiles_;
 		let gross := round(get_week_summary_gross(truck, f, t), 2);
@@ -172,9 +178,15 @@ function get_week_summary(dispatch : number,f : date,t : date,r : number) do
 		let current_rpm := fact.RPM;
 		"number(gross) / number(miles_week)";
 		let dif := number(miles_week) - number(miles_start);
-		let driver_pay := 2 *
-			last((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment');
-		let truck_other_deduction := sum((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
+		let driver_pay := 0;
+		let dp := number((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).'Total Driver Pay');
+		if dp > 0 then
+			driver_pay := round(dp, 2)
+		else
+			driver_pay := 2 *
+				last((select DriverPay where number(TruckNumber_) = number(truck) and 'Out Date' <= t and 'Return Date' > f).'Week Payment')
+		end;
+		let truck_other_deduction := number((select Facturacion where 'Truck#' = truck and From < date(f) + 4 and To > date(t) - 4).Expenses_nofuel_nodriverpay_);
 		let truck_percent := (select FixedPayment where Truck = truck).'% Applied';
 		let net_2 := 0;
 		if gross > 0 then
