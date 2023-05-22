@@ -45,7 +45,7 @@ function truck_current_location(truck : text) do
 		end
 	end
 end;
-"-- WEEK PAID AFTER UPDATE ON PAYMENT APPROVAL--";
+"-- WEEK PAID AFTER UPDATE ON PAYMENT APPROVAL---";
 function update_week_paid_select_(weekpaid : boolean,wpaid : number,wtp : number,trk : number,disp : text,outd : date,ret : date,dayp : number,weekp : number,log : text) do
 	if weekpaid = 1 then wpaid := wtp else wpaid := null end;
 	let l := log;
@@ -85,11 +85,14 @@ function get_drivers_hours(truck : text) do
 	let drivers := (select SamsaraDrivers where last_truck_reported_ = text(truck)).cycle_remaining_;
 	join(drivers, "/")
 end;
+"/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////";
+"GET WEEKLY SUMMARY GROSS";
 function get_week_summary_gross(truck : number,f : date,t : date) do
 	let trn := last((select TrucksDB where truck_ = number(truck)).Id);
-	let gross_week := sum((select Loads where 'DEL Date' >= f and 'DEL Date' <= t and TrucksDB = trn).Gross);
+	let gross_week := sum((select Loads where delday >= f and delday <= t and TrucksDB = trn).Gross);
 	number(gross_week)
 end;
+"/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////";
 function get_week_loads_miles(truck : number,f : date,t : date) do
 	let trn := last((select TrucksDB where truck_ = number(truck)).Id);
 	let week_miles := sum((select Loads where 'DEL Date' >= f and 'DEL Date' <= t and TrucksDB = trn).Miles);
@@ -156,6 +159,7 @@ function open_facturation(truck : text,from_ : date,to_ : date) do
 	let fac := get_facturation(truck, from_, to_);
 	popupRecord(fac)
 end;
+"////////////////////////////////////////////////////////////////////////////////////////////////////////////////////";
 "--GET WEEK SUMMARY--";
 "let q := Dispatch;";
 "get_week_summary(number(q), date(from_), date(To_ + 1),0)";
@@ -359,7 +363,7 @@ function add_load(from_ : date,d : number,trk : text) do
 				q.('DEL Date' := from_);
 				let a := (create Load_Status);
 				a.(Loads := q);
-				a.(from_date := date(from_));
+				a.(from_date := from_);
 				a.(status_ := 2)
 			else
 				if check = "In Yard" then
